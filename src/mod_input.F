@@ -187,7 +187,8 @@ CONTAINS
     END SUBROUTINE KEYVALUE_PAIRS_ADD
 
 !
-! Add a keyword-value pair to the table:
+! Retrieve the value associated with the keyword in the table;
+! returns .TRUE. if the keyword is present, .FALSE. if not.
 !
     FUNCTION KEYVALUE_PAIRS_GET(Keyword, Value) RESULT(WAS_PRESENT)
         IMPLICIT NONE
@@ -254,7 +255,7 @@ CONTAINS
         IMPLICIT NONE
     
         CHARACTER(LEN=*), INTENT(IN) :: InputFileName
-        CHARACTER(LEN=132) :: TextBuffer
+        CHARACTER(LEN=512) :: TextBuffer
         CHARACTER(LEN=1), PARAMETER :: CommentDelim = '!'
         INTEGER :: ierr, equalIdx, endIdx, TextLength
     
