@@ -230,6 +230,11 @@ SUBROUTINE MIXING_STUFF
 SUBROUTINE CALCULATE_MEAN
 
 ----------------------------------
+mod_dictionary.F
+
+MODULE MOD_DICTIONARY
+
+----------------------------------
 mod_global.F
 
 MODULE GLOBAL

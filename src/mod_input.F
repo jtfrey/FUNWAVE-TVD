@@ -50,24 +50,73 @@
 !    11/27/2024  Jeffrey T Frey (caching of keyword-value pairs)
 !
 !-------------------------------------------------------------------------------------
-
 MODULE INPUT_READ
 
     USE PARAM,ONLY : SP
+    USE MOD_DICTIONARY
 #if defined (PARALLEL)
     USE GLOBAL,ONLY : myid,ier
     USE MPI
 # endif
     IMPLICIT NONE
-  
-!
-! Define a data type for our keyword-value pairs.  We could use allocatable
-! fields, but by using a static dimension we ensure a simple bulk allocation
-! of memory to the array of pairs.
-!
-    TYPE :: KEYVALUE_PAIR
-        CHARACTER(LEN=80) :: KEYWORD, VALUE
-    END TYPE KEYVALUE_PAIR
+
+#if defined(PARALLEL)
+        Integer, Private :: LAST_MPI_ERR
+#   define COND_WARNING_OPEN1(COND, ARG1) \
+        If ((COND)) Then ; \
+            IF (MYID == 0) Write(*,*) ARG1
+#   define COND_WARNING_OPEN2(COND, ARG1, ARG2) \
+        If ((COND)) Then ; \
+            IF (MYID == 0) Write(*,*) ARG1, ARG2
+#   define COND_WARNING_OPEN3(COND, ARG1, ARG2, ARG3) \
+        If ((COND)) Then ; \
+            IF (MYID == 0) Write(*,*) ARG1, ARG2, ARG3
+#   define COND_STOP1(COND, ARG1) \
+        If ((COND)) Then ; \
+            IF (MYID == 0) Write(*,*) ARG1 ; \
+            Call MPI_Finalize(LAST_MPI_ERR) ; \
+            Stop ; \
+        End If
+#   define COND_STOP2(COND, ARG1, ARG2) \
+        If ((COND)) Then ; \
+            IF (MYID == 0) Write(*,*) ARG1, ARG2 ; \
+            Call MPI_Finalize(LAST_MPI_ERR) ; \
+            Stop ; \
+        End If
+#   define COND_STOP3(COND, ARG1, ARG2, ARG3) \
+        If ((COND)) Then ; \
+            IF (MYID == 0) Write(*,*) ARG1, ARG2, ARG3 ; \
+            Call MPI_Finalize(LAST_MPI_ERR) ; \
+            Stop ; \
+        End If
+#else
+#   define COND_WARNING_OPEN1(COND, ARG1) \
+        If ((COND)) Then ; \
+            Write(*,*) ARG1
+#   define COND_WARNING_OPEN2(COND, ARG1, ARG2) \
+        If ((COND)) Then ; \
+            Write(*,*) ARG1, ARG2
+#   define COND_WARNING_OPEN3(COND, ARG1, ARG2, ARG3) \
+        If ((COND)) Then ; \
+            Write(*,*) ARG1, ARG2, ARG3
+#   define COND_STOP1(COND, ARG1) \
+        If ((COND)) Then ; \
+            Write(*,*) ARG1 ; \
+            Stop ; \
+        End If
+#   define COND_STOP2(COND, ARG1, ARG2) \
+        If ((COND)) Then ; \
+            Write(*,*) ARG1, ARG2 ; \
+            Stop ; \
+        End If
+#   define COND_STOP3(COND, ARG1, ARG2, ARG3) ; \
+        If ((COND)) Then ; \
+            Write(*,*) ARG1, ARG2, ARG3 ; \
+            Stop ; \
+        End If
+#endif
+#define COND_WARNING_CLOSE() End If
+
 
 ! Set when the code (attempts) to open the input file:
     LOGICAL :: FILE_EXIST = .FALSE.
@@ -76,17 +125,10 @@ MODULE INPUT_READ
     CHARACTER(LEN=:), ALLOCATABLE :: KEYVALUE_FILE_NAME
 
 ! The key-value pairs will be stashed in this table:
-    INTEGER :: KEYVALUE_LEN = 0, KEYVALUE_CAPACITY = 0
-    TYPE(KEYVALUE_PAIR), DIMENSION(:), ALLOCATABLE :: KEYVALUE_PAIRS
+    TYPE(dictionary) :: KEYVALUE_PAIRS
 
 ! Expose these to external callers:
     PUBLIC :: FILE_EXIST
-    PUBLIC :: KEYVALUE_PAIRS_INIT, KEYVALUE_PAIRS_DEALLOC, KEYVALUE_PAIRS_SUMMARIZE
-    PUBLIC :: KEYVALUE_PAIRS_RESET, READ_VALUE
-
-! Hide these from external access:
-    PRIVATE :: KEYVALUE_FILE_NAME, KEYVALUE_LEN, KEYVALUE_CAPACITY, KEYVALUE_PAIRS
-    PRIVATE :: KEYVALUE_PAIRS_BSEARCH, KEYVALUE_PAIRS_ADD, KEYVALUE_PAIRS_GET
 
     INTERFACE READ_FOUR_TYPE_VALUES
         Module Procedure READ_FLOAT
@@ -97,223 +139,6 @@ MODULE INPUT_READ
 
 CONTAINS
 
-!
-! Returns the index at which the keyword is found:
-!
-    FUNCTION KEYVALUE_PAIRS_BSEARCH(Keyword) RESULT(OUT_IDX)
-        IMPLICIT NONE
-        CHARACTER(LEN=*), INTENT(IN) :: Keyword
-        INTEGER :: I_LO, I_HI, I_MID, OUT_IDX
-        
-        OUT_IDX = 0
-        I_LO = 1
-        I_HI = KEYVALUE_LEN
-        DO WHILE (I_LO <= I_HI)
-            I_MID = I_LO + ((I_HI - I_LO) / 2)
-            IF (Keyword == KEYVALUE_PAIRS(I_MID)%Keyword) THEN
-                OUT_IDX = I_MID
-                EXIT
-            ELSE IF (LGT(Keyword, KEYVALUE_PAIRS(I_MID)%Keyword)) THEN
-                I_LO = I_MID + 1
-            ELSE
-                I_HI = I_MID - 1
-            END IF
-        END DO
-        RETURN
-    END FUNCTION KEYVALUE_PAIRS_BSEARCH
-
-!
-! Add a keyword-value pair to the table:
-!
-    SUBROUTINE KEYVALUE_PAIRS_ADD(Keyword, Value)
-        IMPLICIT NONE
-        CHARACTER(LEN=*), INTENT(IN) :: Keyword
-        CHARACTER(LEN=*), INTENT(IN) :: Value
-        TYPE(KEYVALUE_PAIR), DIMENSION(:), ALLOCATABLE :: NEW_KEYVALUE_PAIRS
-        INTEGER :: I_IDX, J_IDX
-        LOGICAL :: WAS_PRESENT = .FALSE.
-        
-        !
-        ! Keep the list sorted by keyword; we do a binary search
-        ! to seek out the incoming Keyword.  If it exists, then we
-        ! alter the value and that's all.  Otherwise, the search
-        ! will have left us with I_LO/I_HI on the last-compared
-        ! keyword that did not match:
-        !
-        IF (KEYVALUE_LEN .GT. 0) THEN
-            I_IDX = KEYVALUE_PAIRS_BSEARCH(Keyword)
-            IF (I_IDX > 0) THEN
-                KEYVALUE_PAIRS(I_IDX)%Value = Value
-                WAS_PRESENT = .TRUE.
-            END IF
-        END IF
-        IF (.NOT. WAS_PRESENT) THEN
-            !
-            ! Resize the array if necessary -- or if it hasn't been allocated yet:
-            !
-            IF (.NOT. Allocated(KEYVALUE_PAIRS)) THEN
-                KEYVALUE_CAPACITY = 25
-                KEYVALUE_LEN = 0
-                Allocate(KEYVALUE_PAIRS(KEYVALUE_CAPACITY))
-            ELSE IF (KEYVALUE_LEN == KEYVALUE_CAPACITY) THEN
-                Allocate(NEW_KEYVALUE_PAIRS(KEYVALUE_CAPACITY + 25))
-                NEW_KEYVALUE_PAIRS(1:KEYVALUE_LEN) = KEYVALUE_PAIRS(1:KEYVALUE_LEN)
-                Deallocate(KEYVALUE_PAIRS)
-                KEYVALUE_PAIRS = NEW_KEYVALUE_PAIRS
-                KEYVALUE_CAPACITY = KEYVALUE_CAPACITY + 25
-            END IF
-            !
-            ! Find the insertion slot:
-            !
-            I_IDX = 1
-            DO WHILE (I_IDX <= KEYVALUE_LEN)
-                IF (LLT(Keyword, KEYVALUE_PAIRS(I_IDX)%Keyword)) EXIT
-                I_IDX = I_IDX + 1
-            END DO
-            IF (I_IDX <= KEYVALUE_LEN) THEN
-                !
-                ! Shift trailing slots up one index:
-                !
-                J_IDX = KEYVALUE_LEN
-                DO WHILE (J_IDX >= I_IDX)
-                    KEYVALUE_PAIRS(J_IDX+1) = KEYVALUE_PAIRS(J_IDX)
-                    J_IDX = J_IDX - 1
-                END DO
-            END IF
-            KEYVALUE_PAIRS(I_IDX)%Keyword = Keyword
-            KEYVALUE_PAIRS(I_IDX)%Value = Value
-            KEYVALUE_LEN = KEYVALUE_LEN + 1
-        END IF
-    END SUBROUTINE KEYVALUE_PAIRS_ADD
-
-!
-! Retrieve the value associated with the keyword in the table;
-! returns .TRUE. if the keyword is present, .FALSE. if not.
-!
-    FUNCTION KEYVALUE_PAIRS_GET(Keyword, Value) RESULT(WAS_PRESENT)
-        IMPLICIT NONE
-        CHARACTER(LEN=*), INTENT(IN) :: Keyword
-        CHARACTER(LEN=*), INTENT(OUT) :: Value
-        LOGICAL :: WAS_PRESENT
-        INTEGER :: I_IDX
-
-        WAS_PRESENT = .FALSE.
-        IF (KEYVALUE_LEN .GT. 0) THEN
-            I_IDX = KEYVALUE_PAIRS_BSEARCH(Keyword)
-            IF (I_IDX > 0) THEN
-                Value = KEYVALUE_PAIRS(I_IDX)%Value
-                WAS_PRESENT = .TRUE.
-            END IF
-        END IF
-        RETURN
-    END FUNCTION KEYVALUE_PAIRS_GET
-
-!
-! Empty the cached keyword-value pairs if they exist:
-!
-    SUBROUTINE KEYVALUE_PAIRS_RESET()
-        IMPLICIT NONE
-        
-        IF (Allocated(KEYVALUE_FILE_NAME)) Deallocate(KEYVALUE_FILE_NAME)
-        FILE_EXIST = .FALSE.
-        KEYVALUE_LEN = 0
-    END SUBROUTINE KEYVALUE_PAIRS_RESET
-
-!
-! Destroy the cached keyword-value pairs if they exist:
-!
-    SUBROUTINE KEYVALUE_PAIRS_DEALLOC()
-        IMPLICIT NONE
-
-        IF (Allocated(KEYVALUE_FILE_NAME)) Deallocate(KEYVALUE_FILE_NAME)
-        IF (Allocated(KEYVALUE_PAIRS)) Deallocate(KEYVALUE_PAIRS)
-        FILE_EXIST = .FALSE.
-        KEYVALUE_CAPACITY = 0
-        KEYVALUE_LEN = 0
-    END SUBROUTINE KEYVALUE_PAIRS_DEALLOC
-
-!
-! Summarize the keyword-value pairs:
-!
-    SUBROUTINE KEYVALUE_PAIRS_SUMMARIZE()
-        IMPLICIT NONE
-        INTEGER :: idx
-        
-        idx = 1
-        WRITE(*,'("File name: ",A," with ",I0," pairs")') TRIM(KEYVALUE_FILE_NAME), KEYVALUE_LEN
-        DO WHILE (idx <= KEYVALUE_LEN)
-            WRITE(*,1000) TRIM(KEYVALUE_PAIRS(idx)%Keyword), TRIM(KEYVALUE_PAIRS(idx)%Value)
-            idx = idx + 1
-        END DO
-1000 FORMAT('    [',A,'] = [',A,']')
-    END SUBROUTINE KEYVALUE_PAIRS_SUMMARIZE
-
-!
-! Read the input file and stash all keyword-value pairs:
-!
-    SUBROUTINE KEYVALUE_PAIRS_INIT(InputFileName)
-        IMPLICIT NONE
-    
-        CHARACTER(LEN=*), INTENT(IN) :: InputFileName
-        CHARACTER(LEN=512) :: TextBuffer
-        CHARACTER(LEN=1), PARAMETER :: CommentDelim = '!'
-        INTEGER :: ierr, equalIdx, endIdx, TextLength
-    
-        IF (.NOT. Allocated(KEYVALUE_FILE_NAME) .OR. (Allocated(KEYVALUE_FILE_NAME) .AND. &
-                InputFileName /= KEYVALUE_FILE_NAME)) THEN
-            CALL KEYVALUE_PAIRS_RESET()
-            INQUIRE(FILE=InputFileName, EXIST=FILE_EXIST)
-            IF (FILE_EXIST) THEN
-                OPEN(10, FILE=InputFileName, ACTION='READ', POSITION='REWIND', STATUS='OLD', &
-                         IOSTAT=ierr)
-                IF (ierr == 0) THEN
-                    KEYVALUE_FILE_NAME = InputFileName
-                    !
-                    ! Read the file line by line:
-                    !
-                    ierr = 0
-                    DO WHILE (ierr == 0)
-                        READ(10, '(A)', iostat=ierr) TextBuffer
-                        IF (ierr == 0) THEN
-                            ! Any comment delimiter in the line?  If not, set the endIdx to
-                            ! the last character of the string:
-                            endIdx = INDEX(TextBuffer, CommentDelim)
-                            IF (endIdx == 0) endIdx = LEN_TRIM(TextBuffer) + 1
-                            ! Cut the string to length:
-                            TextBuffer = TRIM(TextBuffer(1:endIdx - 1))
-                            TextLength = LEN(TextBuffer)
-                            ! Find the keyword-value separator:
-                            equalIdx = INDEX(TextBuffer, '=')
-                            IF (equalIdx > 0) THEN
-                                CALL KEYVALUE_PAIRS_ADD(ADJUSTL(TRIM(TextBuffer(1:equalIdx-1))), &
-                                                        ADJUSTL(TRIM(TextBuffer(equalIdx+1:TextLength))))
-                            END IF
-                        END IF
-                    END DO
-                    CLOSE(10)
-                ELSE
-#if defined (PARALLEL)
-                    IF (MYID == 0)  &
-#endif
-                    WRITE(*,*) TRIM(InputFileName), ' CAN NOT BE OPENED (iostat=',ierr,'). STOP'
-#if defined (PARALLEL)
-                    MPI_FINALIZE(ierr)
-#endif
-                    STOP
-                END IF
-            ELSE
-#if defined (PARALLEL)
-                IF (MYID == 0)  &
-#endif
-                WRITE(*,*) TRIM(InputFileName), ' CAN NOT BE FOUND. STOP'
-#if defined (PARALLEL)
-                MPI_FINALIZE(ierr)
-#endif
-                STOP
-            END IF
-        END IF
-    END SUBROUTINE KEYVALUE_PAIRS_INIT
-
 ! Raw value
 
     SUBROUTINE READ_VALUE(FileName,MatchCharacter,VAL,ERR_IF_ONE)
@@ -322,11 +147,17 @@ CONTAINS
         CHARACTER(LEN=*), INTENT(IN ) :: MatchCharacter 
         CHARACTER(LEN=*), INTENT(OUT) :: VAL
         INTEGER,          INTENT(OUT) :: ERR_IF_ONE
+        INTEGER                       :: IERR
         
         ERR_IF_ONE = 1
-        CALL KEYVALUE_PAIRS_INIT(FileName)
+        IF (.NOT. Allocated(KEYVALUE_FILE_NAME) .OR. &
+              (Allocated(KEYVALUE_FILE_NAME) .AND. (FileName /= KEYVALUE_FILE_NAME))) THEN
+            IF (Allocated(KEYVALUE_FILE_NAME)) Deallocate(KEYVALUE_FILE_NAME)
+            CALL KEYVALUE_PAIRS%init_with_file(TRIM(FileName), FILE_EXIST, IERR)
+            KEYVALUE_FILE_NAME = TRIM(FileName)
+        END IF
         IF (FILE_EXIST) THEN
-            IF (KEYVALUE_PAIRS_GET(MatchCharacter, VAL)) ERR_IF_ONE = 0
+            IF (KEYVALUE_PAIRS%get(MatchCharacter, VAL)) ERR_IF_ONE = 0
         END IF
     END SUBROUTINE READ_VALUE
   
@@ -338,29 +169,19 @@ CONTAINS
         CHARACTER(LEN=*), INTENT(IN ) :: InputFileName
         CHARACTER(LEN=*), INTENT(IN ) :: MatchCharacter
         INTEGER,          INTENT(OUT) :: ERR_IF_ONE
+        INTEGER                       :: ierr
         CHARACTER(LEN=80)             :: RAW_VALUE, VAL_TYPE
         
         CALL READ_VALUE(InputFileName, MatchCharacter, RAW_VALUE, ERR_IF_ONE)
-        IF (ERR_IF_ONE == 1) THEN
-#if defined (PARALLEL)
-            IF (MYID == 0)  &
-#endif
-            WRITE(*,*) TRIM(MatchCharacter), ' DOES NOT EXIST. USE DEFAULT VALUE'
-        ELSE
-            ! Check argument type
-            CALL CHECK_CONSISTENCY_TYPE(RAW_VALUE, VAL_TYPE)
-            IF(TRIM(VAL_TYPE) .NE. 'INTEGER') THEN
-#if defined (PARALLEL)
-                IF (MYID == 0)  &
-#endif
-                WRITE(*,*) TRIM(MatchCharacter), ' IS NOT INTEGER, STOP!'
-#if defined (PARALLEL)
-                MPI_FINALIZE(ierr)
-#endif
-                STOP
-            END IF
-            READ(RAW_VALUE,*) INTEGER_VAL   
-        END IF
+        
+        COND_WARNING_OPEN2(ERR_IF_ONE, TRIM(MatchCharacter), ' DOES NOT EXIST. USE DEFAULT VALUE')
+            ELSE
+                ! Check argument type
+                CALL CHECK_CONSISTENCY_TYPE(RAW_VALUE, VAL_TYPE)
+                COND_STOP2(TRIM(VAL_TYPE) .NE. 'INTEGER', TRIM(MatchCharacter), &
+                            ' IS NOT INTEGER, STOP!')
+                READ(RAW_VALUE,*) INTEGER_VAL
+        COND_WARNING_CLOSE()
     END SUBROUTINE READ_INTEGER
 
 ! Float
@@ -371,29 +192,19 @@ CONTAINS
         CHARACTER(LEN=*), INTENT(IN ) :: InputFileName
         CHARACTER(LEN=*), INTENT(IN ) :: MatchCharacter
         INTEGER,          INTENT(OUT) :: ERR_IF_ONE
+        INTEGER                       :: ierr
         CHARACTER(LEN=80)             :: RAW_VALUE, VAL_TYPE
         
         CALL READ_VALUE(InputFileName, MatchCharacter, RAW_VALUE, ERR_IF_ONE)
-        IF (ERR_IF_ONE == 1) THEN
-#if defined (PARALLEL)
-            IF (MYID == 0)  &
-#endif
-            WRITE(*,*) TRIM(MatchCharacter), ' DOES NOT EXIST. USE DEFAULT VALUE'
-        ELSE
-            ! Check argument type
-            CALL CHECK_CONSISTENCY_TYPE(RAW_VALUE, VAL_TYPE)
-            IF(TRIM(VAL_TYPE) .NE. 'float') THEN
-#if defined (PARALLEL)
-                IF (MYID == 0)  &
-#endif
-                WRITE(*,*) TRIM(MatchCharacter), ' IS NOT FLOAT, STOP!'
-#if defined (PARALLEL)
-                MPI_FINALIZE(ierr)
-#endif
-                STOP
-            END IF
-            READ(RAW_VALUE,*) FLOAT_VAL   
-        END IF
+        
+        COND_WARNING_OPEN2(ERR_IF_ONE, TRIM(MatchCharacter), ' DOES NOT EXIST. USE DEFAULT VALUE')
+            ELSE
+                ! Check argument type
+                CALL CHECK_CONSISTENCY_TYPE(RAW_VALUE, VAL_TYPE)
+                COND_STOP2(TRIM(VAL_TYPE) .NE. 'float', TRIM(MatchCharacter), &
+                            ' IS NOT FLOAT, STOP!')
+                READ(RAW_VALUE,*) FLOAT_VAL
+        COND_WARNING_CLOSE()
     END SUBROUTINE READ_FLOAT
 
 ! Logical
@@ -407,23 +218,18 @@ CONTAINS
         CHARACTER(LEN=80)             :: RAW_VALUE, VAL_TYPE
         
         CALL READ_VALUE(InputFileName, MatchCharacter, RAW_VALUE, ERR_IF_ONE)
-        IF (ERR_IF_ONE == 1) THEN
-#if defined (PARALLEL)
-            IF (MYID == 0)  &
-#endif
-            WRITE(*,*) TRIM(MatchCharacter), ' DOES NOT EXIST. USE DEFAULT VALUE'
-        ELSE
-            ! Check argument type
-            CALL CHECK_CONSISTENCY_TYPE(RAW_VALUE, VAL_TYPE)
-            IF(TRIM(VAL_TYPE) .NE. 'logical') THEN
-#if defined (PARALLEL)
-                IF (MYID == 0)  &
-#endif
-                WRITE(*,*) TRIM(MatchCharacter), ' IS NOT LOGICAL, SET FALSE EXCEPT FIRST LETTER IS T'
-            END IF
-            LOGICAL_VAL = .FALSE.
-            IF(RAW_VALUE(1:1) == 'T') LOGICAL_VAL = .TRUE.
-        END IF
+        
+        COND_WARNING_OPEN2(ERR_IF_ONE, TRIM(MatchCharacter), ' DOES NOT EXIST. USE DEFAULT VALUE')
+            ELSE
+                ! Check argument type
+                CALL CHECK_CONSISTENCY_TYPE(RAW_VALUE, VAL_TYPE)
+                COND_WARNING_OPEN2(TRIM(VAL_TYPE) .NE. 'logical', TRIM(MatchCharacter), &
+                            ' IS NOT LOGICAL, SET FALSE EXCEPT FIRST LETTER IS T')
+                COND_WARNING_CLOSE()
+                
+                LOGICAL_VAL = .FALSE.
+                IF(RAW_VALUE(1:1) == 'T') LOGICAL_VAL = .TRUE.
+        COND_WARNING_CLOSE()
     END SUBROUTINE READ_LOGICAL
 
 ! STRING
@@ -434,29 +240,18 @@ CONTAINS
         CHARACTER(LEN=*), INTENT(IN ) :: InputFileName
         CHARACTER(LEN=*), INTENT(IN ) :: MatchCharacter
         INTEGER,          INTENT(OUT) :: ERR_IF_ONE
+        INTEGER                       :: ierr
         CHARACTER(LEN=80)             :: RAW_VALUE, VAL_TYPE
         
         CALL READ_VALUE(InputFileName, MatchCharacter, RAW_VALUE, ERR_IF_ONE)
-        IF (ERR_IF_ONE == 1) THEN
-#if defined (PARALLEL)
-            IF (MYID == 0)  &
-#endif
-            WRITE(*,*) TRIM(MatchCharacter), ' DOES NOT EXIST. USE DEFAULT VALUE'
-        ELSE
-            ! Check argument type
-            CALL CHECK_CONSISTENCY_TYPE(RAW_VALUE, VAL_TYPE)
-            IF(TRIM(VAL_TYPE) .NE. 'string') THEN
-#if defined (PARALLEL)
-                IF (MYID == 0)  &
-#endif
-                WRITE(*,*) TRIM(MatchCharacter), ' IS NOT STRING, STOP!'
-#if defined (PARALLEL)
-                MPI_FINALIZE(ierr)
-#endif
-                STOP
-            END IF
-            STRING_VAL = ADJUSTL(TRIM(RAW_VALUE))
-        END IF
+        COND_WARNING_OPEN2(ERR_IF_ONE, TRIM(MatchCharacter), ' DOES NOT EXIST. USE DEFAULT VALUE')
+            ELSE
+                ! Check argument type
+                CALL CHECK_CONSISTENCY_TYPE(RAW_VALUE, VAL_TYPE)
+                COND_STOP2(TRIM(VAL_TYPE) .NE. 'string', TRIM(MatchCharacter), &
+                            ' IS NOT STRING, STOP!')
+                STRING_VAL = ADJUSTL(TRIM(RAW_VALUE))
+        COND_WARNING_CLOSE()
     END SUBROUTINE READ_STRING 
 
 ! Infer type of value read from file
@@ -497,7 +292,7 @@ CONTAINS
 
 END MODULE INPUT_READ
 
-#if defined(MOD_INPUT_TEST_PROGRAM)
+#if defined(ENABLE_MOD_INPUT_TEST_PROGRAM)
 
 PROGRAM TEST
     USE INPUT_READ
@@ -507,39 +302,21 @@ PROGRAM TEST
     REAL(SP)          :: FVal
     INTEGER           :: ERR_IF_ONE, IVal
     LOGICAL           :: LVal
+        
+    CALL READ_STRING(SVal, 'input.txt', 'RESULT_FOLDER', ERR_IF_ONE)
+    IF (ERR_IF_ONE /= 1) WRITE(*,*) 'RESULT_FOLDER = ',TRIM(SVal)
     
-    !
-    ! Calling KEYVALUE_PAIRS_INIT() is optional; on the first call to a
-    ! READ_(INTEGER|FLOAT|LOGICAL|STRING) subroutine the cache will be
-    ! populated from the named file.
-    !
-    ! Any time the file name passed to one of those functions changes
-    ! relative to the last-cached file name, the cache will be purged and
-    ! repopulated from that file.  Since the majority of input file reads
-    ! come from the same file and occur in sequence, the number of file
-    ! reads is minimized at the expense of a little RAM.
-    !
-    CALL KEYVALUE_PAIRS_INIT('input.txt')
-    IF (FILE_EXIST) THEN
-        CALL KEYVALUE_PAIRS_SUMMARIZE()
-        WRITE(*,*)
-        
-        CALL READ_STRING(SVal, 'input.txt', 'RESULT_FOLDER', ERR_IF_ONE)
-        IF (ERR_IF_ONE /= 1) WRITE(*,*) 'RESULT_FOLDER = ',TRIM(SVal)
-        
-        CALL READ_FLOAT(FVal, 'input.txt', 'Sponge_west_width', ERR_IF_ONE)
-        IF (ERR_IF_ONE /= 1) WRITE(*,*) 'Sponge_west_width = ',FVal
-        
-        CALL KEYVALUE_PAIRS_DEALLOC()
-        
-        CALL READ_INTEGER(IVal, 'input.txt', 'ITER', ERR_IF_ONE)
-        IF (ERR_IF_ONE /= 1) WRITE(*,*) 'ITER = ',IVal
-        
-        CALL KEYVALUE_PAIRS_RESET()
-        
-        CALL READ_LOGICAL(LVal, 'input.txt', 'WaveHeight', ERR_IF_ONE)
-        IF (ERR_IF_ONE /= 1) WRITE(*,*) 'WaveHeight = ',LVal
-    END IF
+    CALL READ_FLOAT(FVal, 'input.txt', 'Sponge_west_width', ERR_IF_ONE)
+    IF (ERR_IF_ONE /= 1) WRITE(*,*) 'Sponge_west_width = ',FVal
+    
+    CALL READ_INTEGER(IVal, 'input.txt', 'ITER', ERR_IF_ONE)
+    IF (ERR_IF_ONE /= 1) WRITE(*,*) 'ITER = ',IVal
+    
+    CALL READ_INTEGER(IVal, 'input2.txt', 'ITER', ERR_IF_ONE)
+    IF (ERR_IF_ONE /= 1) WRITE(*,*) 'ITER = ',IVal
+    
+    CALL READ_LOGICAL(LVal, 'input.txt', 'WaveHeight', ERR_IF_ONE)
+    IF (ERR_IF_ONE /= 1) WRITE(*,*) 'WaveHeight = ',LVal
 END PROGRAM
 
 #endif
