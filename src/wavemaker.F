@@ -3049,10 +3049,10 @@ SUBROUTINE CALCULATE_NEW_Cm_Sm(M,N,DX,DY,Xc,Ibeg,Jbeg,mfreq,mtheta,D_gen,&
 
     USE PARAM
 # if defined (PARALLEL)
-    USE GLOBAL, ONLY : myid,npx,npy,px,py,Mglob,Nglob, &
-        iista,jjsta,&   !ykchoi Jan/23/2018
-        loop_index,Freq !Chen, Salatin
+    USE GLOBAL, ONLY : myid,npx,npy,px,py,Mglob,Nglob,&
+                       iista, jjsta    !ykchoi Jan/23/2018
 # endif
+    USE GLOBAL, ONLY : loop_index,Freq !Chen, Salatin
     IMPLICIT NONE
     INTEGER,INTENT(IN) :: M,N,mfreq,mtheta,Ibeg,Jbeg
     REAL(SP),INTENT(IN) :: DX,DY,width,Xc

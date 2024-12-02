@@ -174,12 +174,11 @@ CONTAINS
         
         CALL READ_VALUE(InputFileName, MatchCharacter, RAW_VALUE, ERR_IF_ONE)
         
-        COND_WARNING_OPEN2(ERR_IF_ONE, TRIM(MatchCharacter), ' DOES NOT EXIST. USE DEFAULT VALUE')
+        COND_WARNING_OPEN2(ERR_IF_ONE == 1, TRIM(MatchCharacter), ' DOES NOT EXIST. USE DEFAULT VALUE')
             ELSE
                 ! Check argument type
                 CALL CHECK_CONSISTENCY_TYPE(RAW_VALUE, VAL_TYPE)
-                COND_STOP2(TRIM(VAL_TYPE) .NE. 'INTEGER', TRIM(MatchCharacter), &
-                            ' IS NOT INTEGER, STOP!')
+                COND_STOP2(TRIM(VAL_TYPE) .NE. 'INTEGER', TRIM(MatchCharacter), ' IS NOT INTEGER, STOP!')
                 READ(RAW_VALUE,*) INTEGER_VAL
         COND_WARNING_CLOSE()
     END SUBROUTINE READ_INTEGER
@@ -197,12 +196,11 @@ CONTAINS
         
         CALL READ_VALUE(InputFileName, MatchCharacter, RAW_VALUE, ERR_IF_ONE)
         
-        COND_WARNING_OPEN2(ERR_IF_ONE, TRIM(MatchCharacter), ' DOES NOT EXIST. USE DEFAULT VALUE')
+        COND_WARNING_OPEN2(ERR_IF_ONE == 1, TRIM(MatchCharacter), ' DOES NOT EXIST. USE DEFAULT VALUE')
             ELSE
                 ! Check argument type
                 CALL CHECK_CONSISTENCY_TYPE(RAW_VALUE, VAL_TYPE)
-                COND_STOP2(TRIM(VAL_TYPE) .NE. 'float', TRIM(MatchCharacter), &
-                            ' IS NOT FLOAT, STOP!')
+                COND_STOP2(TRIM(VAL_TYPE) .NE. 'float', TRIM(MatchCharacter), ' IS NOT FLOAT, STOP!')
                 READ(RAW_VALUE,*) FLOAT_VAL
         COND_WARNING_CLOSE()
     END SUBROUTINE READ_FLOAT
@@ -219,12 +217,11 @@ CONTAINS
         
         CALL READ_VALUE(InputFileName, MatchCharacter, RAW_VALUE, ERR_IF_ONE)
         
-        COND_WARNING_OPEN2(ERR_IF_ONE, TRIM(MatchCharacter), ' DOES NOT EXIST. USE DEFAULT VALUE')
+        COND_WARNING_OPEN2(ERR_IF_ONE == 1, TRIM(MatchCharacter), ' DOES NOT EXIST. USE DEFAULT VALUE')
             ELSE
                 ! Check argument type
                 CALL CHECK_CONSISTENCY_TYPE(RAW_VALUE, VAL_TYPE)
-                COND_WARNING_OPEN2(TRIM(VAL_TYPE) .NE. 'logical', TRIM(MatchCharacter), &
-                            ' IS NOT LOGICAL, SET FALSE EXCEPT FIRST LETTER IS T')
+                COND_WARNING_OPEN2(TRIM(VAL_TYPE) .NE. 'logical', TRIM(MatchCharacter), ' IS NOT LOGICAL, SET FALSE EXCEPT FIRST LETTER IS T')
                 COND_WARNING_CLOSE()
                 
                 LOGICAL_VAL = .FALSE.
@@ -244,12 +241,11 @@ CONTAINS
         CHARACTER(LEN=80)             :: RAW_VALUE, VAL_TYPE
         
         CALL READ_VALUE(InputFileName, MatchCharacter, RAW_VALUE, ERR_IF_ONE)
-        COND_WARNING_OPEN2(ERR_IF_ONE, TRIM(MatchCharacter), ' DOES NOT EXIST. USE DEFAULT VALUE')
+        COND_WARNING_OPEN2(ERR_IF_ONE == 1, TRIM(MatchCharacter), ' DOES NOT EXIST. USE DEFAULT VALUE')
             ELSE
                 ! Check argument type
                 CALL CHECK_CONSISTENCY_TYPE(RAW_VALUE, VAL_TYPE)
-                COND_STOP2(TRIM(VAL_TYPE) .NE. 'string', TRIM(MatchCharacter), &
-                            ' IS NOT STRING, STOP!')
+                COND_STOP2(TRIM(VAL_TYPE) .NE. 'string', TRIM(MatchCharacter), ' IS NOT STRING, STOP!')
                 STRING_VAL = ADJUSTL(TRIM(RAW_VALUE))
         COND_WARNING_CLOSE()
     END SUBROUTINE READ_STRING 

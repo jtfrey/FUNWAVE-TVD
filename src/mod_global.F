@@ -305,7 +305,7 @@ MODULE GLOBAL
       INTEGER, DIMENSION(:,:),ALLOCATABLE :: Num_Zero_Up
 
       !ykchoi
-	REAL(SP),DIMENSION(:,:),ALLOCATABLE :: ETA2sum,ETA2mean,SigWaveHeight
+      REAL(SP),DIMENSION(:,:),ALLOCATABLE :: ETA2sum,ETA2mean,SigWaveHeight
 
 ! depth H=Eta+Depth, 
        REAL(SP),DIMENSION(:,:),ALLOCATABLE :: Depth,H,&
@@ -431,9 +431,9 @@ MODULE GLOBAL
        REAL(SP) :: WAVEMAKER_Cbrk
        LOGICAL :: ETA_LIMITER = .FALSE.
        REAL(SP) :: CrestLimit, TroughLimit
-	!ykchoi 
-	 REAL(SP) :: EtaBlowVal
-	 REAL(SP) :: STEADY_TIME
+       !ykchoi 
+       REAL(SP) :: EtaBlowVal
+       REAL(SP) :: STEADY_TIME
       ! ykchoi(08.18.2015) :: for viscosity of wavemaker
        REAL(SP) :: visbrk, WAVEMAKER_visbrk
        LOGICAL :: WAVEMAKER_VIS=.FALSE.

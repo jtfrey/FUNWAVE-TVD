@@ -1,0 +1,134 @@
+
+#ifndef __FUNWAVE_TVD_CONFIG_H__
+#define __FUNWAVE_TVD_CONFIG_H__
+
+#define FUNWAVE_TVD_VERSION_STRING "@PROJECT_VERSION@"
+#define FUNWAVE_TVD_VERSION_MAJOR @PROJECT_VERSION_MAJOR@
+#define FUNWAVE_TVD_VERSION_MINOR @PROJECT_VERSION_MINOR@
+#define FUNWAVE_TVD_VERSION_PATCH @PROJECT_VERSION_PATCH@
+
+#cmakedefine ENABLE_COUPLING
+#cmakedefine ENABLE_ZALPHA
+#cmakedefine ENABLE_MANNING
+#cmakedefine ENABLE_VESSEL
+#cmakedefine ENABLE_METEO
+#cmakedefine ENABLE_WIND
+#cmakedefine ENABLE_SEDIMENT
+#cmakedefine ENABLE_CHECK_MASS_CONSERVATION
+#cmakedefine ENABLE_TMP
+#cmakedefine ENABLE_TRACKING
+#cmakedefine ENABLE_FOAM
+#cmakedefine ENABLE_PRECIPITATION
+#cmakedefine ENABLE_SUBGRID
+#cmakedefine ENABLE_DEEP_DRAFT_VESSEL
+#cmakedefine ENABLE_FILTERING
+#cmakedefine ENABLE_ITERATION
+#cmakedefine ENABLE_AB_OUTPUT
+#cmakedefine ENABLE_SPHERICAL_IJ_STATION
+
+#cmakedefine ENABLE_VESSEL_PANEL_SOURCE
+#cmakedefine ENABLE_REALISTIC_VESSEL_BODY
+#cmakedefine ENABLE_PROPELLER
+
+#define FUNWAVE_TVD_PRECISION "@FP_PRECISION@"
+#cmakedefine ENABLE_DOUBLE_PRECISION
+
+#define FUNWAVE_TVD_COORD_SYSTEM "@COORD_SYSTEM@"
+#cmakedefine ENABLE_COORD_SPHERICAL
+
+#cmakedefine ENABLE_MPI
+#cmakedefine HAVE_INTEL_FORTRAN
+#cmakedefine ENABLE_DEBUG
+#cmakedefine ENABLE_SEDIMENT_DEBUG
+
+
+
+#ifdef ENABLE_COUPLING
+#   define COUPLING
+#endif
+#ifdef ENABLE_ZALPHA
+#   define ZALPHA
+#endif
+#ifdef ENABLE_MANNING
+#   define MANNING
+#endif
+#ifdef ENABLE_VESSEL
+#   define VESSEL
+#endif
+#ifdef ENABLE_METEO
+#   define METEO
+#endif
+#ifdef ENABLE_WIND
+#   define WIND
+#endif
+#ifdef ENABLE_SEDIMENT
+#   define SEDIMENT
+#endif
+#ifdef ENABLE_CHECK_MASS_CONSERVATION
+#   define CHECK_MASS_CONSERVATION
+#endif
+#ifdef ENABLE_TMP
+#   define TMP
+#endif
+#ifdef ENABLE_TRACKING
+#   define TRACKING
+#endif
+#ifdef ENABLE_FOAM
+#   define FOAM
+#endif
+#ifdef ENABLE_PRECIPITATION
+#   define PRECIPITATION
+#endif
+#ifdef ENABLE_SUBGRID
+#   define SUBGRID
+#endif
+#ifdef ENABLE_DEEP_DRAFT_VESSEL
+#   define DEEP_DRAFT_VESSEL
+#endif
+#ifdef ENABLE_FILTERING
+#   define FILTERING
+#endif
+#ifdef ENABLE_ITERATION
+#   define ITERATION
+#endif
+#ifdef ENABLE_AB_OUTPUT
+#   define AB_OUTPUT
+#endif
+#ifdef ENABLE_SPHERICAL_IJ_STATION
+#   define SPHERICAL_IJ_STATION
+#endif
+#ifdef ENABLE_UseEtaScreen
+#   define UseEtaScreen
+#endif
+
+#ifdef ENABLE_VESSEL_PANEL_SOURCE
+#   define VESSEL_PANEL_SOURCE
+#endif
+#ifdef ENABLE_REALISTIC_VESSEL_BODY
+#   define REALISTIC_VESSEL_BODY
+#endif
+#ifdef ENABLE_PROPELLER
+#   define PROPELLER
+#endif
+
+#ifdef ENABLE_DOUBLE_PRECISION
+#   define DOUBLE_PRECISION
+#endif
+#ifndef ENABLE_COORD_SPHERICAL
+#   define CARTESIAN
+#endif
+#ifdef ENABLE_MPI
+#   define PARALLEL
+#endif
+#ifdef HAVE_INTEL_FORTRAN
+#   define INTEL
+#endif
+#ifdef ENABLE_DEBUG
+#   define DEBUG
+#endif
+#ifdef ENABLE_SEDIMENT_DEBUG
+#   define SEDIMENT_DEBUG
+#endif
+
+#endif /* __FUNWAVE_TVD_CONFIG_H__ */
+
