@@ -43,7 +43,7 @@
 !  
 !-------------------------------------------------------------------------------------
 !
-!    INDEX is subroutine to index for MPI
+!    MPI_INDEX is subroutine to index for MPI
 !
 !    HISTORY: 
 !    05/06/2010 Fengyan Shi
@@ -51,7 +51,7 @@
 !
 !-------------------------------------------------------------------------------------
 
-SUBROUTINE INDEX
+SUBROUTINE MPI_INDEX
     USE GLOBAL
     IMPLICIT NONE
     INTEGER :: icp
@@ -175,7 +175,7 @@ SUBROUTINE INDEX
     Jend=Nloc-Nghost
     Jend1=Nloc1-Nghost
 
-END SUBROUTINE INDEX
+END SUBROUTINE MPI_INDEX
 
 ![--------------ykchoi 04/May/2017
 subroutine grid_range_per_procs( n1, n2, nprocs, myid, stag, endg )

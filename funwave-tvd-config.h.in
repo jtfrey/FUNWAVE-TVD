@@ -6,8 +6,11 @@
 #define FUNWAVE_TVD_VERSION_MAJOR @PROJECT_VERSION_MAJOR@
 #define FUNWAVE_TVD_VERSION_MINOR @PROJECT_VERSION_MINOR@
 #define FUNWAVE_TVD_VERSION_PATCH @PROJECT_VERSION_PATCH@
+#define FUNWAVE_TVD_GIT_HASH_STRING "@GIT_HASH@"
 
-#define FUNWAVE_TVD_COMPILER "@CMAKE_Fortran_COMPILER_ID@"
+#define FUNWAVE_TVD_COMPILER_STRING "@CMAKE_Fortran_COMPILER_ID@"
+
+#define FUNWAVE_TVD_FEATURES_STRING "@FUNWAVE_TVD_FEATURES_STRING@"
 
 #cmakedefine ENABLE_COUPLING
 #cmakedefine ENABLE_ZALPHA
@@ -46,90 +49,90 @@
 
 
 
-#ifdef ENABLE_COUPLING
+#if defined(ENABLE_COUPLING) && ! defined(COUPLING)
 #   define COUPLING
 #endif
-#ifdef ENABLE_ZALPHA
+#if defined(ENABLE_ZALPHA) && ! defined(ZALPHA)
 #   define ZALPHA
 #endif
-#ifdef ENABLE_MANNING
+#if defined(ENABLE_MANNING) && ! defined(MANNING)
 #   define MANNING
 #endif
-#ifdef ENABLE_VESSEL
+#if defined(ENABLE_VESSEL) && ! defined(VESSEL)
 #   define VESSEL
 #endif
-#ifdef ENABLE_METEO
+#if defined(ENABLE_METEO) && ! defined(METEO)
 #   define METEO
 #endif
-#ifdef ENABLE_WIND
+#if defined(ENABLE_WIND) && ! defined(WIND)
 #   define WIND
 #endif
-#ifdef ENABLE_SEDIMENT
+#if defined(ENABLE_SEDIMENT) && ! defined(SEDIMENT)
 #   define SEDIMENT
 #endif
-#ifdef ENABLE_CHECK_MASS_CONSERVATION
+#if defined(ENABLE_CHECK_MASS_CONSERVATION) && ! defined(CHECK_MASS_CONSERVATION)
 #   define CHECK_MASS_CONSERVATION
 #endif
-#ifdef ENABLE_TMP
+#if defined(ENABLE_TMP) && ! defined(TMP)
 #   define TMP
 #endif
-#ifdef ENABLE_TRACKING
+#if defined(ENABLE_TRACKING) && ! defined(TRACKING)
 #   define TRACKING
 #endif
-#ifdef ENABLE_FOAM
+#if defined(ENABLE_FOAM) && ! defined(FOAM)
 #   define FOAM
 #endif
-#ifdef ENABLE_PRECIPITATION
+#if defined(ENABLE_PRECIPITATION) && ! defined(PRECIPITATION)
 #   define PRECIPITATION
 #endif
-#ifdef ENABLE_SUBGRID
+#if defined(ENABLE_SUBGRID) && ! defined(SUBGRID)
 #   define SUBGRID
 #endif
-#ifdef ENABLE_DEEP_DRAFT_VESSEL
+#if defined(ENABLE_DEEP_DRAFT_VESSEL) && ! defined(DEEP_DRAFT_VESSEL)
 #   define DEEP_DRAFT_VESSEL
 #endif
-#ifdef ENABLE_FILTERING
+#if defined(ENABLE_FILTERING) && ! defined(FILTERING)
 #   define FILTERING
 #endif
-#ifdef ENABLE_ITERATION
+#if defined(ENABLE_ITERATION) && ! defined(ITERATION)
 #   define ITERATION
 #endif
-#ifdef ENABLE_AB_OUTPUT
+#if defined(ENABLE_AB_OUTPUT) && ! defined(AB_OUTPUT)
 #   define AB_OUTPUT
 #endif
-#ifdef ENABLE_SPHERICAL_IJ_STATION
+#if defined(ENABLE_SPHERICAL_IJ_STATION) && ! defined(SPHERICAL_IJ_STATION)
 #   define SPHERICAL_IJ_STATION
 #endif
-#ifdef ENABLE_UseEtaScreen
+#if defined(ENABLE_UseEtaScreen) && ! defined(UseEtaScreen)
 #   define UseEtaScreen
 #endif
 
-#ifdef ENABLE_VESSEL_PANEL_SOURCE
+#if defined(ENABLE_VESSEL_PANEL_SOURCE) && ! defined(VESSEL_PANEL_SOURCE)
 #   define VESSEL_PANEL_SOURCE
 #endif
-#ifdef ENABLE_REALISTIC_VESSEL_BODY
+#if defined(ENABLE_REALISTIC_VESSEL_BODY) && ! defined(REALISTIC_VESSEL_BODY)
 #   define REALISTIC_VESSEL_BODY
 #endif
-#ifdef ENABLE_PROPELLER
+#if defined(ENABLE_PROPELLER) && ! defined(PROPELLER)
 #   define PROPELLER
 #endif
 
-#ifdef ENABLE_DOUBLE_PRECISION
+#if defined(ENABLE_DOUBLE_PRECISION) && ! defined(DOUBLE_PRECISION)
 #   define DOUBLE_PRECISION
 #endif
 #ifndef ENABLE_COORD_SPHERICAL
 #   define CARTESIAN
 #endif
-#ifdef ENABLE_MPI
+#if defined(ENABLE_MPI) && ! defined(PARALLEL)
 #   define PARALLEL
 #endif
-#ifdef HAVE_INTEL_FORTRAN
+#if defined(HAVE_INTEL_FORTRAN) && ! defined(INTEL)
 #   define INTEL
 #endif
-#ifdef ENABLE_DEBUG
+#if defined(ENABLE_DEBUG) && ! defined(DEBUG)
 #   define DEBUG
 #endif
-#ifdef ENABLE_SEDIMENT_DEBUG
+#if defined(ENABLE_SEDIMENT_DEBUG) && ! defined(SEDIMENT_DEBUG)
 #   define SEDIMENT_DEBUG
 #endif
 

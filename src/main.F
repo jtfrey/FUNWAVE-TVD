@@ -42,6 +42,15 @@
 !    either expressed or implied, of the FreeBSD Project.
 !  
 !-------------------------------------------------------------------------------------
+
+!
+! The CMake build environment will set this flag to indicate it
+! produced a configurational header file we can include:
+!
+#if defined(HAVE_FUNWAVE_TVD_CONFIG_H)
+#   include "funwave-tvd-config.h"
+#endif
+
 Program FUNWAVE_TVD
 !-------------------------------------------------------------------------------------
 !    VERSION 3.0
@@ -161,6 +170,13 @@ Program FUNWAVE_TVD
 
      IMPLICIT NONE
 
+#if defined(HAVE_FUNWAVE_TVD_CONFIG_H)
+! The following variables are used for splitting-out and displaying the
+! feature string components:
+     INTEGER :: START_IDX, PLUS_IDX, FEATURES_STRING_LEN
+     CHARACTER(LEN=*), PARAMETER :: FEATURES_STRING = FUNWAVE_TVD_FEATURES_STRING
+#endif
+
 !     INTEGER::ISTAGE ! moved to mod_global 09/12/2017
 !     REAL(SP) :: tbegin,tend  ! moved to mod_global 07/29/2016
 
@@ -173,6 +189,48 @@ Program FUNWAVE_TVD
        IF(myid==0) WRITE(*,*) 'MPI_INIT'     
 #    endif
 # endif
+
+#if defined(HAVE_FUNWAVE_TVD_CONFIG_H)
+#   if defined(PARALLEL)
+     IF (myid == 0) THEN
+#   endif
+         WRITE(*,'(A)')           '................................................................'
+         WRITE(*,*)
+         WRITE(*,'(A)')           '  F U N W A V E - T V D'
+         WRITE(*,'(A,A,A,A,A)')   '  v', FUNWAVE_TVD_VERSION_STRING, ' (git hash ', FUNWAVE_TVD_GIT_HASH_STRING, ')'
+         WRITE(*,*)
+         WRITE(*,'(A,A)')         '       Compiler: ', FUNWAVE_TVD_COMPILER_STRING
+         WRITE(*,'(A,A,a)')       '        FP mode: ', FUNWAVE_TVD_PRECISION, '-precision'
+         WRITE(*,'(A,A)')         '      Coord sys: ', FUNWAVE_TVD_COORD_SYSTEM
+         FEATURES_STRING_LEN = LEN_TRIM(FEATURES_STRING)
+         IF (FEATURES_STRING_LEN .GT. 0) THEN
+             START_IDX = 1
+             DO WHILE (START_IDX .GT. 0)
+                 PLUS_IDX=Index(FEATURES_STRING(START_IDX:FEATURES_STRING_LEN), '+')
+                 IF (PLUS_IDX .GT. 0) THEN
+                    IF (START_IDX == 1) THEN
+                        WRITE(*,'(A,A)')   '       Features: ', FEATURES_STRING(1:PLUS_IDX-1)
+                    ELSE
+                        WRITE(*,'(A,A)') '                 ', FEATURES_STRING(START_IDX:START_IDX+PLUS_IDX-2)
+                    ENDIF
+                    START_IDX = START_IDX + PLUS_IDX
+                 ELSE
+                    IF (START_IDX == 1) THEN
+                        WRITE(*,'(A,A)')   '      Features:  ', FEATURES_STRING(1:FEATURES_STRING_LEN)
+                    ELSE
+                        WRITE(*,'(A,A)') '                 ', FEATURES_STRING(START_IDX:FEATURES_STRING_LEN)
+                    ENDIF
+                    START_IDX = 0
+                 ENDIF
+             ENDDO
+         ENDIF
+         WRITE(*,*)
+         WRITE(*,'(A)')   '................................................................'
+         WRITE(*,*)
+#   if defined(PARALLEL)
+     ENDIF
+#   endif
+#endif
 
      CALL READ_INPUT
 
@@ -190,7 +248,7 @@ Program FUNWAVE_TVD
       ENDIF
 	!ykchoi(14.12.24.)]
 
-     CALL INDEX
+     CALL MPI_INDEX
 
 # if defined (DEBUG)
 #    if defined (PARALLEL)

@@ -135,14 +135,6 @@ If (ENABLE_FOAM AND ENABLE_COORD_SPHERICAL)
     Message(FATAL_ERROR "FOAM must use 'cartesian' coordinates, not 'spherical'")
 EndIf()
 
-
-#
-# Generate the boilerplate header file; this ensures if the program
-# gets installed there's some record of which optional components were
-# enabled during compilation.  
-#
-Configure_file(funwave-tvd-config.h.in funwave-tvd-config.h)
-
 #
 # Add the top-level build directory as a global include path so that
 # the generated funwave-tvd-config.h file can be include'd in project
@@ -160,14 +152,92 @@ Include("Fortran_compiler_opts")
 
 
 #
+# Get a git hash if possible, otherwise fake it:
+#
+Function(CheckGitWrite git_hash)
+    File(WRITE "${CMAKE_BINARY_DIR}/git-state.txt" "${git_hash}")
+EndFunction()
+
+Function(CheckGitRead git_hash)
+    If (EXISTS "${CMAKE_BINARY_DIR}/git-state.txt")
+        File(STRINGS "${CMAKE_BINARY_DIR}/git-state.txt" CONTENT)
+        List(GET CONTENT 0 var)
+
+        Set(${git_hash} ${var} PARENT_SCOPE)
+    EndIf()
+EndFunction()
+
+# Get the latest abbreviated commit hash of the working branch
+Execute_process(
+    COMMAND git log -1 --format=%H
+    WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
+    OUTPUT_VARIABLE GIT_HASH
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+If (GIT_HASH MATCHES ^[a-f0-9]+$)
+    CheckGitRead(GIT_HASH_CACHE)
+    If (NOT DEFINED GIT_HASH_CACHE)
+        Set(GIT_HASH_CACHE "INVALID")
+    EndIf()
+
+    # Regenerate the config header if necessary:
+    If (NOT ${GIT_HASH} STREQUAL ${GIT_HASH_CACHE})
+        # Stash the hash for the next pass:
+        CheckGitWrite(${GIT_HASH})
+        If (EXISTS "${CMAKE_BINARY_DIR}/funwave-tvd-config.h")
+            File(REMOVE "${CMAKE_BINARY_DIR}/funwave-tvd-config.h")
+        EndIf()
+    EndIf()
+Else()
+    Set(GIT_HASH "N/A")
+    If (EXISTS "${CMAKE_BINARY_DIR}/funwave-tvd-config.h")
+        File(REMOVE "${CMAKE_BINARY_DIR}/funwave-tvd-config.h")
+    EndIf()
+EndIf()
+
+#
 # Add global compiler -D flags based on the feature options:
 #
+Set(FUNWAVE_FEATURE_LIST_FULL "")
+If (ENABLE_MPI)
+    List(APPEND FUNWAVE_FEATURE_LIST_FULL "MPI")
+EndIf()
+If (ENABLE_DEBUG)
+    List(APPEND FUNWAVE_FEATURE_LIST_FULL "Debug")
+EndIf()
 ForEach(FUNWAVE_FEATURE IN LISTS FUNWAVE_FEATURE_LIST)
     Set(FUNWAVE_FEATURE_NAME "ENABLE_${FUNWAVE_FEATURE}")
     If (${${FUNWAVE_FEATURE_NAME}})
         Add_compile_definitions(${FUNWAVE_FEATURE})
+        #
+        # Add the name to the feature string:
+        #
+        List(APPEND FUNWAVE_FEATURE_LIST_FULL "${FUNWAVE_FEATURE}")
     EndIf()
 EndForEach()
+#
+# Generate the feature string:
+#
+If (FUNWAVE_FEATURE_LIST_FULL)
+    List(SORT FUNWAVE_FEATURE_LIST_FULL COMPARE STRING CASE INSENSITIVE)
+    List(JOIN FUNWAVE_FEATURE_LIST_FULL "+" FUNWAVE_TVD_FEATURES_STRING)
+Else()
+    Set(FUNWAVE_FEATURE_LIST_FULL "")
+EndIf()
+
+#
+# During build we want to specify that the config header is
+# available:
+#
+Add_compile_definitions(HAVE_FUNWAVE_TVD_CONFIG_H)
+
+
+#
+# Generate the boilerplate header file; this ensures if the program
+# gets installed there's some record of which optional components were
+# enabled during compilation.  
+#
+Configure_file(funwave-tvd-config.h.in funwave-tvd-config.h)
 
 
 #

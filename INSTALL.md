@@ -42,6 +42,8 @@ Standard CMake variables that should be used include:
 | `CMAKE_BUILD_TYPE` | The standard build types:  **Release**, Debug, RelWithDebInfo, or MinSizeRel |
 | `CMAKE_INSTALL_PREFIX` | The base path into which products will be installed (e.g. in the `bin` subdirectory) |
 
+The final executable will by default be named `funwave`.  The original `make` system generated an executable name that contained all of the optional features separated by dashes, e.g. `funwave-COUPLING-ZALPHA-WIND-SEDIMENT-PRECIPITATION`.  This behavior can be requested by enabling the `ENABLE_GENERATED_EXENAME` flag, e.g. adding `-DENABLE_GENERATED_EXENAME=On` to your `cmake` command line.
+
 #### Intel compiler
 
 If an Intel compiler is chosen and the `CMAKE_BUILD_TYPE` is not `Debug`, then extensive interprocedural optimizations can be requested using the `ENABLE_INTEL_IPO` variable:
@@ -102,7 +104,7 @@ The `ENABLE_VESSEL` option, when true, makes three additional optional features 
 | `ENABLE_PROPELLER` | *Add more information here…* |
 
 
-### Example build
+### Example build #1
 
 The following build will make use of an MPI compiler (`mpifort`) that was added to the environment and all default optional features.  An optimized (`Release`) build will be performed with Intel IPO enabled.
 
@@ -128,17 +130,17 @@ $ FC=mpifort cmake -DCMAKE_BUILD_TYPE=Release -DENABLE_MPI=On -DENABLE_INTEL_IPO
 -- Build files have been written to: /home/1001/FUNWAVE-TVD/build-intel-openmpi
 
 $ make
-[  3%] Building Fortran object src/CMakeFiles/funwave-intel-parallel-double-SPHERICAL.dir/mod_param.F.o
-[  7%] Building Fortran object src/CMakeFiles/funwave-intel-parallel-double-SPHERICAL.dir/mod_global.F.o
-[ 10%] Building Fortran object src/CMakeFiles/funwave-intel-parallel-double-SPHERICAL.dir/mod_dictionary.F.o
-[ 14%] Building Fortran object src/CMakeFiles/funwave-intel-parallel-double-SPHERICAL.dir/mod_input.F.o
-[ 17%] Building Fortran object src/CMakeFiles/funwave-intel-parallel-double-SPHERICAL.dir/mod_bathy_correction.F.o
-[ 21%] Building Fortran object src/CMakeFiles/funwave-intel-parallel-double-SPHERICAL.dir/mod_parallel_field_io.F.o
+[  3%] Building Fortran object src/CMakeFiles/funwave.dir/mod_param.F.o
+[  7%] Building Fortran object src/CMakeFiles/funwavedir/mod_global.F.o
+[ 10%] Building Fortran object src/CMakeFiles/funwave.dir/mod_dictionary.F.o
+[ 14%] Building Fortran object src/CMakeFiles/funwave.dir/mod_input.F.o
+[ 17%] Building Fortran object src/CMakeFiles/funwave.dir/mod_bathy_correction.F.o
+[ 21%] Building Fortran object src/CMakeFiles/funwave.dir/mod_parallel_field_io.F.o
 [ 25%] Building Fortran object 
    :
-[ 96%] Building Fortran object src/CMakeFiles/funwave-intel-parallel-double-SPHERICAL.dir/parallel.F.o
-[100%] Linking Fortran executable funwave-intel-parallel-double-SPHERICAL
-[100%] Built target funwave-intel-parallel-double-SPHERICAL
+[ 96%] Building Fortran object src/CMakeFiles/funwave.dir/parallel.F.o
+[100%] Linking Fortran executable funwave
+[100%] Built target funwave
 ```
 
 #### Build options header
@@ -156,129 +158,20 @@ $ cat funwave-tvd-config.h
 #define FUNWAVE_TVD_VERSION_MINOR 4
 #define FUNWAVE_TVD_VERSION_PATCH 0
 
-#define FUNWAVE_TVD_COMPILER "Intel"
+#define FUNWAVE_TVD_COMPILER_STRING "Intel"
+
+#define FUNWAVE_TVD_FEATURES_STRING "double+MPI+spherical"
 
 #define ENABLE_COUPLING
 /* #undef ENABLE_ZALPHA */
 /* #undef ENABLE_MANNING */
-/* #undef ENABLE_VESSEL */
-/* #undef ENABLE_METEO */
-/* #undef ENABLE_WIND */
-#define ENABLE_SEDIMENT
-/* #undef ENABLE_CHECK_MASS_CONSERVATION */
-/* #undef ENABLE_TMP */
-#define ENABLE_TRACKING
-/* #undef ENABLE_FOAM */
-/* #undef ENABLE_PRECIPITATION */
-/* #undef ENABLE_SUBGRID */
-/* #undef ENABLE_DEEP_DRAFT_VESSEL */
-/* #undef ENABLE_FILTERING */
-/* #undef ENABLE_ITERATION */
-/* #undef ENABLE_AB_OUTPUT */
-/* #undef ENABLE_SPHERICAL_IJ_STATION */
-/* #undef ENABLE_UseEtaScreen */
 
-/* #undef ENABLE_VESSEL_PANEL_SOURCE */
-/* #undef ENABLE_REALISTIC_VESSEL_BODY */
-/* #undef ENABLE_PROPELLER */
-
-#define FUNWAVE_TVD_PRECISION "double"
-#define ENABLE_DOUBLE_PRECISION
-
-#define FUNWAVE_TVD_COORD_SYSTEM "spherical"
-#define ENABLE_COORD_SPHERICAL
-
-#define ENABLE_MPI
-#define HAVE_INTEL_FORTRAN
-/* #undef ENABLE_DEBUG */
-#define ENABLE_SEDIMENT_DEBUG
-
-
-
-#ifdef ENABLE_COUPLING
-#   define COUPLING
-#endif
-#ifdef ENABLE_ZALPHA
-#   define ZALPHA
-#endif
-#ifdef ENABLE_MANNING
-#   define MANNING
-#endif
-#ifdef ENABLE_VESSEL
-#   define VESSEL
-#endif
-#ifdef ENABLE_METEO
-#   define METEO
-#endif
-#ifdef ENABLE_WIND
-#   define WIND
-#endif
-#ifdef ENABLE_SEDIMENT
-#   define SEDIMENT
-#endif
-#ifdef ENABLE_CHECK_MASS_CONSERVATION
-#   define CHECK_MASS_CONSERVATION
-#endif
-#ifdef ENABLE_TMP
-#   define TMP
-#endif
-#ifdef ENABLE_TRACKING
-#   define TRACKING
-#endif
-#ifdef ENABLE_FOAM
-#   define FOAM
-#endif
-#ifdef ENABLE_PRECIPITATION
-#   define PRECIPITATION
-#endif
-#ifdef ENABLE_SUBGRID
-#   define SUBGRID
-#endif
-#ifdef ENABLE_DEEP_DRAFT_VESSEL
-#   define DEEP_DRAFT_VESSEL
-#endif
-#ifdef ENABLE_FILTERING
-#   define FILTERING
-#endif
-#ifdef ENABLE_ITERATION
-#   define ITERATION
-#endif
-#ifdef ENABLE_AB_OUTPUT
-#   define AB_OUTPUT
-#endif
-#ifdef ENABLE_SPHERICAL_IJ_STATION
-#   define SPHERICAL_IJ_STATION
-#endif
-#ifdef ENABLE_UseEtaScreen
-#   define UseEtaScreen
-#endif
-
-#ifdef ENABLE_VESSEL_PANEL_SOURCE
-#   define VESSEL_PANEL_SOURCE
-#endif
-#ifdef ENABLE_REALISTIC_VESSEL_BODY
-#   define REALISTIC_VESSEL_BODY
-#endif
-#ifdef ENABLE_PROPELLER
-#   define PROPELLER
-#endif
-
-#ifdef ENABLE_DOUBLE_PRECISION
-#   define DOUBLE_PRECISION
-#endif
-#ifndef ENABLE_COORD_SPHERICAL
-#   define CARTESIAN
-#endif
-#ifdef ENABLE_MPI
-#   define PARALLEL
-#endif
-#ifdef HAVE_INTEL_FORTRAN
-#   define INTEL
-#endif
-#ifdef ENABLE_DEBUG
+   :
+   
+#if defined(ENABLE_DEBUG) && ! defined(DEBUG)
 #   define DEBUG
 #endif
-#ifdef ENABLE_SEDIMENT_DEBUG
+#if defined(ENABLE_SEDIMENT_DEBUG) && ! defined(SEDIMENT_DEBUG)
 #   define SEDIMENT_DEBUG
 #endif
 
@@ -286,3 +179,95 @@ $ cat funwave-tvd-config.h
 ```
 
 If the `make install` command is used to install the software after build, the `funwave-tvd-config.h` file will be installed in the `${CMAKE_INSTALL_PREFIX}/include` path.
+
+### Example build #2
+
+The code can be compiled without MPI parallelism by not setting the `ENABLE_MPI` flag.  CMake is also good at establishing dependency rules that allow for efficient (and correctly-ordered) parallel builds:
+
+```
+$ vpkg_require cmake/3.28.3 intel-oneapi/2023
+Adding package `cmake/3.28.3` to your environment
+Adding dependency `binutils/2.35` to your environment
+Adding dependency `gcc/12.1.0` to your environment
+Adding package `intel-oneapi/2023.0.0.25537` to your environment
+
+$ mkdir build-intel-oneapi
+$ cd build-intel-oneapi
+
+$ FC=ifx cmake -DCMAKE_BUILD_TYPE=Release -DENABLE_INTEL_IPO=On ..
+-- The Fortran compiler identification is IntelLLVM 2023.0.0
+-- Detecting Fortran compiler ABI info
+-- Detecting Fortran compiler ABI info - done
+-- Check for working Fortran compiler: /opt/shared/intel-oneapi/2023.0.0.25537/compiler/2023.0.0/linux/bin/ifx - skipped
+-- Configuring done (0.9s)
+-- Generating done (0.0s)
+-- Build files have been written to: /home/1001/FUNWAVE-TVD/build-intel-oneapi
+
+
+$ make clean ; time make
+   :
+[ 96%] Building Fortran object src/CMakeFiles/funwave.dir/samples.F.o
+[100%] Linking Fortran executable funwave
+[100%] Built target funwave
+
+real    0m30.161s
+user    0m26.665s
+sys     0m3.212s
+
+
+$ make clean ; time make -j 4
+   :
+[ 96%] Building Fortran object src/CMakeFiles/funwave.dir/main.F.o
+[100%] Linking Fortran executable funwave
+[100%] Built target funwave
+
+real    0m21.983s
+user    0m25.624s
+sys     0m2.794s
+```
+
+The executable produced can be run; lacking input files the output is relatively short:
+
+```
+$ ./src/funwave
+................................................................
+ 
+  F U N W A V E - T V D
+  v3.4.0 (git hash b6c20dc2ff97b85c80165d0e913adbd6f002ce62)
+ 
+       Compiler: IntelLLVM
+        FP mode: double-precision
+      Coord sys: spherical
+ 
+................................................................
+ 
+ TITLE DOES NOT EXIST. USE DEFAULT VALUE
+ Mglob DOES NOT EXIST. USE DEFAULT VALUE
+                                  Mglob:                       NOT DEFINED, STOP
+```
+
+Enabling sediment and precipitation, rebuilding, and rerunning:
+
+```
+$ FC=ifx cmake -DCMAKE_BUILD_TYPE=Release -DENABLE_INTEL_IPO=On -DENABLE_SEDIMENT=On -DENABLE_PRECIPITATION=On ..
+$ make -j 4
+$ ./src/funwave 
+................................................................
+ 
+  F U N W A V E - T V D
+  v3.4.0 (git hash b6c20dc2ff97b85c80165d0e913adbd6f002ce62)
+ 
+       Compiler: IntelLLVM
+        FP mode: double-precision
+      Coord sys: spherical
+       Features: PRECIPITATION
+                 SEDIMENT
+ 
+................................................................
+ 
+ TITLE DOES NOT EXIST. USE DEFAULT VALUE
+ Mglob DOES NOT EXIST. USE DEFAULT VALUE
+                                  Mglob:                       NOT DEFINED, STOP
+```
+
+Under the CMake build system, a header that summarizes the version, compiler, and features is written to stdout as the program starts.  Jobs run with this executable will clearly indicate 

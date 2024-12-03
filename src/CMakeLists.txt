@@ -3,51 +3,55 @@
 # CMakeLists.txt in the parent directory.
 #
 
-If (NOT DEFINED FUNWAVE_EXE OR NOT FUNWAVE_EXE)
-    #
-    # Base name:
-    #
-    Set(FUNWAVE_EXE "funwave")
-    #
-    # Append strings for each optional feature:
-    #
-    ForEach(FUNWAVE_FEATURE IN LISTS FUNWAVE_FEATURE_LIST)
-        Set(FUNWAVE_FEATURE_NAME "ENABLE_${FUNWAVE_FEATURE}")
-        If (${${FUNWAVE_FEATURE_NAME}})
-            Set(FUNWAVE_EXE "${FUNWAVE_EXE}-${FUNWAVE_FEATURE}")
+Option(ENABLE_GENERATED_EXENAME "Generate an executable name containing enabled features" False)
+If (ENABLE_GENERATED_EXENAME)
+    If (NOT DEFINED FUNWAVE_EXE OR NOT FUNWAVE_EXE)
+        #
+        # Base name:
+        #
+        Set(FUNWAVE_EXE "funwave")
+        #
+        # Append strings for each optional feature:
+        #
+        ForEach(FUNWAVE_FEATURE IN LISTS FUNWAVE_FEATURE_LIST)
+            Set(FUNWAVE_FEATURE_NAME "ENABLE_${FUNWAVE_FEATURE}")
+            If (${${FUNWAVE_FEATURE_NAME}})
+                Set(FUNWAVE_EXE "${FUNWAVE_EXE}-${FUNWAVE_FEATURE}")
+            EndIf()
+        EndForEach()
+        #
+        # Append compiler id:
+        #
+        String(TOLOWER ${CMAKE_Fortran_COMPILER_ID} CMAKE_Fortran_COMPILER_ID_LC) 
+        Set(FUNWAVE_EXE "${FUNWAVE_EXE}-${CMAKE_Fortran_COMPILER_ID_LC}")
+        #
+        # Append parallel vs. sequential:
+        #
+        If (ENABLE_MPI)
+            Set(FUNWAVE_EXE "${FUNWAVE_EXE}-parallel")
+        Else()
+            Set(FUNWAVE_EXE "${FUNWAVE_EXE}-sequential")
         EndIf()
-    EndForEach()
-    #
-    # Append compiler id:
-    #
-    String(TOLOWER ${CMAKE_Fortran_COMPILER_ID} CMAKE_Fortran_COMPILER_ID_LC) 
-    Set(FUNWAVE_EXE "${FUNWAVE_EXE}-${CMAKE_Fortran_COMPILER_ID_LC}")
-    #
-    # Append parallel vs. sequential:
-    #
-    If (ENABLE_MPI)
-        Set(FUNWAVE_EXE "${FUNWAVE_EXE}-parallel")
-    Else()
-        Set(FUNWAVE_EXE "${FUNWAVE_EXE}-sequential")
+        #
+        # Append floating-point precision:
+        #
+        Set(FUNWAVE_EXE "${FUNWAVE_EXE}-${FP_PRECISION}")
+        #
+        # Append debug id:
+        #
+        If (ENABLE_DEBUG)
+            Set(FUNWAVE_EXE "${FUNWAVE_EXE}-DEBUG")
+        EndIf()
+        #
+        # Append coord system:
+        #
+        If (ENABLE_COORD_SPHERICAL)
+            Set(FUNWAVE_EXE "${FUNWAVE_EXE}-SPHERICAL")
+        EndIf()
     EndIf()
-    #
-    # Append floating-point precision:
-    #
-    Set(FUNWAVE_EXE "${FUNWAVE_EXE}-${FP_PRECISION}")
-    #
-    # Append debug id:
-    #
-    If (ENABLE_DEBUG)
-        Set(FUNWAVE_EXE "${FUNWAVE_EXE}-DEBUG")
-    EndIf()
-    #
-    # Append coord system:
-    #
-    If (ENABLE_COORD_SPHERICAL)
-        Set(FUNWAVE_EXE "${FUNWAVE_EXE}-SPHERICAL")
-    EndIf()
+Else()
+    Set(FUNWAVE_EXE "funwave")
 EndIf()
-
 
 #
 # Baseline source files, regardless of optional features:
