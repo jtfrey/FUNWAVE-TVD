@@ -107,6 +107,11 @@ Add_executable(${FUNWAVE_EXE} ${FUNWAVE_SOURCES})
 #
 Set_target_properties(${FUNWAVE_EXE} PROPERTIES Fortran_FORMAT "FREE")
 
+#
+# Check git as a dependency:
+#
+Add_dependencies(${FUNWAVE_EXE} AlwaysCheckGitHash)
+
 If (ENABLE_MPI)
     #
     # Add any additional preprocessing/compilation/link flags provided

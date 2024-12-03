@@ -155,7 +155,8 @@ Include("Fortran_compiler_opts")
 # Git hash handling:
 #
 Include("CheckGitHash")
-CheckGitHashSetup("${CMAKE_CURRENT_BINARY_DIR}/funwave-tvd-config.h")
+CheckGitHashSetup("${CMAKE_CURRENT_LIST_DIR}/funwave-tvd-config.h.in" "${CMAKE_CURRENT_BINARY_DIR}/funwave-tvd-config.h")
+
 
 #
 # Add global compiler -D flags based on the feature options:

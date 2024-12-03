@@ -27,26 +27,31 @@ function(CheckGitHashVersion)
         endif ()
     Else()
         Set(GIT_HASH "unknown")
+        Set(GIT_HASH_CACHE "")
     EndIf()
 
     # Only update the git_version.cpp if the hash has changed. This will
     # prevent us from rebuilding the project more than we need to.
-    if (NOT ${GIT_HASH} STREQUAL ${GIT_HASH_CACHE})
+    if (NOT "${GIT_HASH}" STREQUAL "${GIT_HASH_CACHE}")
         # Stash the hash for the next pass:
         CheckGitHashWrite(${GIT_HASH})
-        If (EXISTS "$GIT_HASH_OUTFILE")
-            File(REMOVE "$GIT_HASH_OUTFILE")
+        If (EXISTS "${GIT_HASH_OUTFILE}")
+            File(REMOVE "${GIT_HASH_OUTFILE}")
+        EndIf()
+        If (EXISTS "${GIT_HASH_INFILE}")
+            Configure_file("${GIT_HASH_INFILE}" "${GIT_HASH_OUTFILE}")
         EndIf()
     endif ()
 
 endfunction()
 
-function(CheckGitHashSetup outfile)
+function(CheckGitHashSetup infile outfile)
     add_custom_target(AlwaysCheckGitHash COMMAND ${CMAKE_COMMAND}
         -DRUN_CHECK_GIT_HASH_VERSION=1
         -DGIT_HASH_CACHE=${GIT_HASH_CACHE}
+        -DGIT_HASH_INFILE=${infile}
         -DGIT_HASH_OUTFILE=${outfile}
-        -P ${CMAKE_CURRENT_LIST_DIR}/CheckGitHash.cmake
+        -P ${CMAKE_CURRENT_LIST_DIR}/cmake/CheckGitHash.cmake
         BYPRODUCTS ${outfile})
     CheckGitHashVersion()
 endfunction()
