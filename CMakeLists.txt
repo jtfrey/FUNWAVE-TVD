@@ -152,48 +152,10 @@ Include("Fortran_compiler_opts")
 
 
 #
-# Get a git hash if possible, otherwise fake it:
+# Git hash handling:
 #
-Function(CheckGitWrite git_hash)
-    File(WRITE "${CMAKE_BINARY_DIR}/git-state.txt" "${git_hash}")
-EndFunction()
-
-Function(CheckGitRead git_hash)
-    If (EXISTS "${CMAKE_BINARY_DIR}/git-state.txt")
-        File(STRINGS "${CMAKE_BINARY_DIR}/git-state.txt" CONTENT)
-        List(GET CONTENT 0 var)
-
-        Set(${git_hash} ${var} PARENT_SCOPE)
-    EndIf()
-EndFunction()
-
-# Get the latest abbreviated commit hash of the working branch
-Execute_process(
-    COMMAND git log -1 --format=%H
-    WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
-    OUTPUT_VARIABLE GIT_HASH
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-If (GIT_HASH MATCHES ^[a-f0-9]+$)
-    CheckGitRead(GIT_HASH_CACHE)
-    If (NOT DEFINED GIT_HASH_CACHE)
-        Set(GIT_HASH_CACHE "INVALID")
-    EndIf()
-
-    # Regenerate the config header if necessary:
-    If (NOT ${GIT_HASH} STREQUAL ${GIT_HASH_CACHE})
-        # Stash the hash for the next pass:
-        CheckGitWrite(${GIT_HASH})
-        If (EXISTS "${CMAKE_BINARY_DIR}/funwave-tvd-config.h")
-            File(REMOVE "${CMAKE_BINARY_DIR}/funwave-tvd-config.h")
-        EndIf()
-    EndIf()
-Else()
-    Set(GIT_HASH "N/A")
-    If (EXISTS "${CMAKE_BINARY_DIR}/funwave-tvd-config.h")
-        File(REMOVE "${CMAKE_BINARY_DIR}/funwave-tvd-config.h")
-    EndIf()
-EndIf()
+Include("CheckGitHash")
+CheckGitHashSetup("${CMAKE_CURRENT_BINARY_DIR}/funwave-tvd-config.h")
 
 #
 # Add global compiler -D flags based on the feature options:
