@@ -36,7 +36,6 @@ function(CheckGitHashVersion)
     if (NOT DEFINED GIT_HASH_CACHE)
         Set(GIT_HASH_CACHE "unknown")
     endif ()
-    Message("${GIT_HASH} == ${GIT_HASH_CACHE}")
 
     # Only update the git_version.cpp if the hash has changed. This will
     # prevent us from rebuilding the project more than we need to.
@@ -55,12 +54,10 @@ endfunction()
 function(CheckGitHashSetup infile outfile)
     add_custom_target(AlwaysCheckGitHash COMMAND ${CMAKE_COMMAND}
         -DRUN_CHECK_GIT_HASH_VERSION=1
-        -DGIT_HASH_CACHE=${GIT_HASH_CACHE}
         -DGIT_HASH_INFILE=${infile}
         -DGIT_HASH_OUTFILE=${outfile}
         -P ${CMAKE_CURRENT_LIST_DIR}/cmake/CheckGitHash.cmake
         BYPRODUCTS ${outfile})
-    CheckGitHashVersion()
 endfunction()
 
 # This is used to run this function from an external cmake process.
