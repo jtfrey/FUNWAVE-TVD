@@ -276,4 +276,5 @@ $ ./src/funwave
                                   Mglob:                       NOT DEFINED, STOP
 ```
 
-Under the CMake build system, a header that summarizes the version, compiler, and features is written to stdout as the program starts.  Jobs run with this executable will clearly indicate 
+Under the CMake build system, a header that summarizes the version, compiler, and features is written to stdout as the program starts.  Jobs run with this executable will thus very clearly indicate the source and options from which they derive.
+
