@@ -121,7 +121,7 @@
 #if defined(ENABLE_DOUBLE_PRECISION) && ! defined(DOUBLE_PRECISION)
 #   define DOUBLE_PRECISION
 #endif
-#ifndef ENABLE_COORD_SPHERICAL
+#if ! defined(ENABLE_COORD_SPHERICAL) && ! defined(CARTESIAN)
 #   define CARTESIAN
 #endif
 #if defined(ENABLE_MPI) && ! defined(PARALLEL)
