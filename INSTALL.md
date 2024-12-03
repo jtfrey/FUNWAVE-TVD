@@ -157,7 +157,8 @@ $ cat funwave-tvd-config.h
 #define FUNWAVE_TVD_VERSION_MAJOR 3
 #define FUNWAVE_TVD_VERSION_MINOR 4
 #define FUNWAVE_TVD_VERSION_PATCH 0
-#define FUNWAVE_TVD_GIT_HASH_STRING "b6c20dc2ff97b85c80165d0e913adbd6f002ce62"
+
+#include "funwave-tvd-githash.h"
 
 #define FUNWAVE_TVD_COMPILER_STRING "Intel"
 
@@ -234,7 +235,9 @@ $ ./src/funwave
 ................................................................
  
   F U N W A V E - T V D
-  v3.4.0 (git hash b6c20dc2ff97b85c80165d0e913adbd6f002ce62)
+  v3.4.0
+  (git hash bf6662da831553ace358a1f23ab8578ae0c2c124,
+     origin https://github.com/jtfrey/FUNWAVE-TVD.git)
  
        Compiler: IntelLLVM
         FP mode: double-precision
@@ -256,7 +259,9 @@ $ ./src/funwave
 ................................................................
  
   F U N W A V E - T V D
-  v3.4.0 (git hash b6c20dc2ff97b85c80165d0e913adbd6f002ce62)
+  v3.4.0
+  (git hash bf6662da831553ace358a1f23ab8578ae0c2c124,
+     origin https://github.com/jtfrey/FUNWAVE-TVD.git)
  
        Compiler: IntelLLVM
         FP mode: double-precision

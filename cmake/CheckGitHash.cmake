@@ -9,15 +9,28 @@
 #
 
 function(CheckGitHashWrite git_hash)
-    file(WRITE ${CMAKE_BINARY_DIR}/git-state.txt ${git_hash})
+    file(WRITE ${CMAKE_BINARY_DIR}/git-hash.txt ${git_hash})
 endfunction()
 
 function(CheckGitHashRead git_hash)
-    if (EXISTS ${CMAKE_BINARY_DIR}/git-state.txt)
-        file(STRINGS ${CMAKE_BINARY_DIR}/git-state.txt CONTENT)
+    if (EXISTS ${CMAKE_BINARY_DIR}/git-hash.txt)
+        file(STRINGS ${CMAKE_BINARY_DIR}/git-hash.txt CONTENT)
         LIST(GET CONTENT 0 var)
 
         set(${git_hash} ${var} PARENT_SCOPE)
+    endif ()
+endfunction()
+
+function(CheckGitURLWrite git_url)
+    file(WRITE ${CMAKE_BINARY_DIR}/git-url.txt ${git_url})
+endfunction()
+
+function(CheckGitURLRead git_url)
+    if (EXISTS ${CMAKE_BINARY_DIR}/git-url.txt)
+        file(STRINGS ${CMAKE_BINARY_DIR}/git-url.txt CONTENT)
+        LIST(GET CONTENT 0 var)
+
+        set(${git_url} ${var} PARENT_SCOPE)
     endif ()
 endfunction()
 
@@ -36,19 +49,33 @@ function(CheckGitHashVersion)
     if (NOT DEFINED GIT_HASH_CACHE)
         Set(GIT_HASH_CACHE "unknown")
     endif ()
+    
+    # Get the latest origin URL of the working branch
+    execute_process(
+        COMMAND git config --get remote.origin.url
+        WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
+        OUTPUT_VARIABLE GIT_URL
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
+    If (NOT GIT_URL)
+        Set(GIT_URL "unknown")
+    EndIf()
+    CheckGitURLRead(GIT_URL_CACHE)
+    if (NOT DEFINED GIT_URL_CACHE)
+        Set(GIT_URL_CACHE "unknown")
+    endif ()
 
-    # Only update the git_version.cpp if the hash has changed. This will
-    # prevent us from rebuilding the project more than we need to.
-    if (NOT "${GIT_HASH}" STREQUAL "${GIT_HASH_CACHE}")
+    # Only update the generated header when necessary:
+    if (NOT "${GIT_HASH}" STREQUAL "${GIT_HASH_CACHE}" OR NOT "${GIT_URL}" STREQUAL "${GIT_URL_CACHE}")
         # Stash the hash for the next pass:
         CheckGitHashWrite(${GIT_HASH})
+        # Stash the URL for the next pass:
+        CheckGitURLWrite(${GIT_URL})
         If (EXISTS "${GIT_HASH_OUTFILE}")
             File(REMOVE "${GIT_HASH_OUTFILE}")
         EndIf()
     endif ()
-    If (NOT EXISTS "${GIT_HASH_OUTFILE}" AND EXISTS "${GIT_HASH_INFILE}")
-        Configure_file("${GIT_HASH_INFILE}" "${GIT_HASH_OUTFILE}")
-    EndIf()
+    Configure_file("${GIT_HASH_INFILE}" "${GIT_HASH_OUTFILE}")
 endfunction()
 
 function(CheckGitHashSetup infile outfile)

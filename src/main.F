@@ -197,7 +197,9 @@ Program FUNWAVE_TVD
          WRITE(*,'(A)')           '................................................................'
          WRITE(*,*)
          WRITE(*,'(A)')           '  F U N W A V E - T V D'
-         WRITE(*,'(A,A,A,A,A)')   '  v', FUNWAVE_TVD_VERSION_STRING, ' (git hash ', FUNWAVE_TVD_GIT_HASH_STRING, ')'
+         WRITE(*,'(A,A)')         '  v', FUNWAVE_TVD_VERSION_STRING
+         WRITE(*,'(A,A,A)')       '  (git hash ', FUNWAVE_TVD_GIT_HASH_STRING, ','
+         WRITE(*,'(A,A,A)')       '     origin ', FUNWAVE_TVD_GIT_ORIGIN_STRING, ')'
          WRITE(*,*)
          WRITE(*,'(A,A)')         '       Compiler: ', FUNWAVE_TVD_COMPILER_STRING
          WRITE(*,'(A,A,a)')       '        FP mode: ', FUNWAVE_TVD_PRECISION, '-precision'
