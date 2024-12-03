@@ -36,6 +36,7 @@ function(CheckGitHashVersion)
     if (NOT DEFINED GIT_HASH_CACHE)
         Set(GIT_HASH_CACHE "unknown")
     endif ()
+    Message("${GIT_HASH} == ${GIT_HASH_CACHE}")
 
     # Only update the git_version.cpp if the hash has changed. This will
     # prevent us from rebuilding the project more than we need to.
