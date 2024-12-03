@@ -1,15 +1,3 @@
-set(CURRENT_LIST_DIR ${CMAKE_CURRENT_LIST_DIR})
-
-if (NOT DEFINED pre_configure_dir)
-    set(pre_configure_dir ${CMAKE_CURRENT_LIST_DIR})
-endif ()
-
-if (NOT DEFINED post_configure_dir)
-    set(post_configure_dir ${CMAKE_BINARY_DIR}/generated)
-endif ()
-
-set(pre_configure_file ${pre_configure_dir}/git_version.cpp.in)
-set(post_configure_file ${post_configure_dir}/git_version.cpp)
 
 function(CheckGitHashWrite git_hash)
     file(WRITE ${CMAKE_BINARY_DIR}/git-state.txt ${git_hash})
@@ -58,8 +46,8 @@ function(CheckGitHashSetup outfile)
         -DRUN_CHECK_GIT_HASH_VERSION=1
         -DGIT_HASH_CACHE=${GIT_HASH_CACHE}
         -DGIT_HASH_OUTFILE=${outfile}
-        -P ${CURRENT_LIST_DIR}/CheckGitHash.cmake
-        BYPRODUCTS ${post_configure_file})
+        -P ${CMAKE_CURRENT_LIST_DIR}/CheckGitHash.cmake
+        BYPRODUCTS ${outfile})
     CheckGitHashVersion()
 endfunction()
 
