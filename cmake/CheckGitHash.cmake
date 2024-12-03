@@ -1,3 +1,12 @@
+#
+# A set of functions that check and cache the full git hash
+# for the current source directory.  When/if the hash differs
+# from the cached version, an input template file is used to
+# generate an output file using Configure_file().
+#
+# The hash is cached in ${CMAKE_BINARY_DIR}/git-state.txt relative
+# to the calling context of CheckGitHashSetup().
+#
 
 function(CheckGitHashWrite git_hash)
     file(WRITE ${CMAKE_BINARY_DIR}/git-state.txt ${git_hash})
@@ -20,15 +29,13 @@ function(CheckGitHashVersion)
         OUTPUT_VARIABLE GIT_HASH
         OUTPUT_STRIP_TRAILING_WHITESPACE
         )
-    If (GIT_HASH MATCHES ^[a-f0-9]+$)
-        CheckGitHashRead(GIT_HASH_CACHE)
-        if (NOT DEFINED GIT_HASH_CACHE)
-            Set(GIT_HASH_CACHE "unknown")
-        endif ()
-    Else()
+    If (NOT GIT_HASH MATCHES ^[a-f0-9]+$)
         Set(GIT_HASH "unknown")
-        Set(GIT_HASH_CACHE "")
     EndIf()
+    CheckGitHashRead(GIT_HASH_CACHE)
+    if (NOT DEFINED GIT_HASH_CACHE)
+        Set(GIT_HASH_CACHE "unknown")
+    endif ()
 
     # Only update the git_version.cpp if the hash has changed. This will
     # prevent us from rebuilding the project more than we need to.
@@ -38,11 +45,10 @@ function(CheckGitHashVersion)
         If (EXISTS "${GIT_HASH_OUTFILE}")
             File(REMOVE "${GIT_HASH_OUTFILE}")
         EndIf()
-        If (EXISTS "${GIT_HASH_INFILE}")
-            Configure_file("${GIT_HASH_INFILE}" "${GIT_HASH_OUTFILE}")
-        EndIf()
     endif ()
-
+    If (NOT EXISTS "${GIT_HASH_OUTFILE}" AND EXISTS "${GIT_HASH_INFILE}")
+        Configure_file("${GIT_HASH_INFILE}" "${GIT_HASH_OUTFILE}")
+    EndIf()
 endfunction()
 
 function(CheckGitHashSetup infile outfile)

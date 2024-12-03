@@ -1,0 +1,8 @@
+
+#ifndef __FUNWAVE_TVD_GITHASH_H__
+#define __FUNWAVE_TVD_GITHASH_H__
+
+#define FUNWAVE_TVD_GIT_HASH_STRING "@GIT_HASH@"
+
+#endif /* __FUNWAVE_TVD_GITHASH_H__ */
+

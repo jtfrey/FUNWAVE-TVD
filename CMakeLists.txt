@@ -135,13 +135,6 @@ If (ENABLE_FOAM AND ENABLE_COORD_SPHERICAL)
     Message(FATAL_ERROR "FOAM must use 'cartesian' coordinates, not 'spherical'")
 EndIf()
 
-#
-# Add the top-level build directory as a global include path so that
-# the generated funwave-tvd-config.h file can be include'd in project
-# source files, for example:
-#
-Include_directories(AFTER ${CMAKE_CURRENT_BINARY_DIR})
-
 
 #
 # Add our local modules path and make some additions
@@ -155,7 +148,7 @@ Include("Fortran_compiler_opts")
 # Git hash handling:
 #
 Include("CheckGitHash")
-CheckGitHashSetup("${CMAKE_CURRENT_LIST_DIR}/funwave-tvd-config.h.in" "${CMAKE_CURRENT_BINARY_DIR}/funwave-tvd-config.h")
+CheckGitHashSetup("${CMAKE_CURRENT_LIST_DIR}/funwave-tvd-githash.h.in" "${CMAKE_CURRENT_BINARY_DIR}/funwave-tvd-githash.h")
 
 
 #
@@ -193,6 +186,14 @@ EndIf()
 # available:
 #
 Add_compile_definitions(HAVE_FUNWAVE_TVD_CONFIG_H)
+
+
+#
+# Add the top-level build directory as a global include path so that
+# the generated funwave-tvd-config.h file can be include'd in project
+# source files, for example:
+#
+Include_directories(AFTER ${CMAKE_CURRENT_BINARY_DIR})
 
 
 #
