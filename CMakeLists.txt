@@ -243,4 +243,6 @@ Add_subdirectory("src")
 # Installation items:
 #
 Include(GNUInstallDirs)
-Install(FILES "${CMAKE_CURRENT_BINARY_DIR}/funwave-tvd-config.h" TYPE INCLUDE)
+Install(FILES "${CMAKE_CURRENT_BINARY_DIR}/funwave-tvd-config.h"
+              "${CMAKE_CURRENT_BINARY_DIR}/funwave-tvd-githash.h"
+              TYPE INCLUDE)
